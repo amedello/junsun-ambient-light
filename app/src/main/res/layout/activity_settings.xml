@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_cockpit"
+    android:padding="16dp">
+
+    <!-- Header -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/bg_pill"
+            android:src="@android:drawable/ic_menu_revert"
+            app:tint="@color/text_primary" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="CONFIGURAZIONE TUYA CLOUD &amp; TASTI"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSave"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:backgroundTint="@color/accent_cyan"
+            android:text="SALVA"
+            android:textColor="#0A0D14"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:cornerRadius="10dp" />
+    </RelativeLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Card: Credenziali Tuya -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="14dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="CREDENZIALI TUYA OPENAPI (iot.tuya.com)"
+                    android:textColor="@color/accent_cyan"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="10dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:hint="Access ID / Client ID"
+                        app:boxStrokeColor="@color/card_stroke"
+                        app:hintTextColor="@color/text_secondary">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etClientId"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/text_primary"
+                            android:singleLine="true" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="Access Secret"
+                        app:boxStrokeColor="@color/card_stroke"
+                        app:hintTextColor="@color/text_secondary">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etSecret"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/text_primary"
+                            android:singleLine="true" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:hint="ID Dispositivo Tuya IR (Device ID)"
+                        app:boxStrokeColor="@color/card_stroke"
+                        app:hintTextColor="@color/text_secondary">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etDeviceId"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/text_primary"
+                            android:singleLine="true" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="ID Telecomando Mappato (Remote ID)"
+                        app:boxStrokeColor="@color/card_stroke"
+                        app:hintTextColor="@color/text_secondary">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etRemoteId"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/text_primary"
+                            android:singleLine="true" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="12dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Regione Data Center: "
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+
+                    <Spinner
+                        android:id="@+id/spRegion"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:backgroundTint="@color/text_primary" />
+
+                    <CheckBox
+                        android:id="@+id/cbDemoMode"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="24dp"
+                        android:text="Modalità Simulazione (Demo)"
+                        android:textColor="@color/status_amber"
+                        android:buttonTint="@color/status_amber" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnTestApi"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:text="TEST CONNESSIONE"
+                        android:textColor="@color/accent_cyan"
+                        android:textSize="11sp"
+                        app:cornerRadius="8dp"
+                        app:strokeColor="@color/accent_cyan" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Card: Mappatura tasti telecomando già registrato in Tuya -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="MAPPATURA TASTI &amp; APPRENDIMENTO IR"
+                            android:textColor="@color/accent_cyan"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Usa i nomi salvati su Tuya oppure cattura direttamente dal telecomando fisico:"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnLearnIrDialog"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:backgroundTint="#FF2A4D"
+                        android:text="APPRENDI TASTO 📡"
+                        android:textColor="#FFFFFF"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="8dp" />
+                </RelativeLayout>
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="10dp" />
+
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="3">
+
+                    <!-- Power -->
+                    <EditText
+                        android:id="@+id/etKeyPower"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:hint="Power (default: power)"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_secondary"
+                        android:background="@drawable/bg_pill"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:textSize="11sp" />
+
+                    <!-- Dim Up -->
+                    <EditText
+                        android:id="@+id/etKeyBrightUp"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:hint="Luminosità + (bright+)"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_secondary"
+                        android:background="@drawable/bg_pill"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:textSize="11sp" />
+
+                    <!-- Dim Down -->
+                    <EditText
+                        android:id="@+id/etKeyBrightDown"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:hint="Luminosità - (bright-)"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_secondary"
+                        android:background="@drawable/bg_pill"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:textSize="11sp" />
+
+                    <!-- Red -->
+                    <EditText
+                        android:id="@+id/etKeyRed"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:hint="Rosso (red)"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_secondary"
+                        android:background="@drawable/bg_pill"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:textSize="11sp" />
+
+                    <!-- Green -->
+                    <EditText
+                        android:id="@+id/etKeyGreen"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:hint="Verde (green)"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_secondary"
+                        android:background="@drawable/bg_pill"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:textSize="11sp" />
+
+                    <!-- Blue -->
+                    <EditText
+                        android:id="@+id/etKeyBlue"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:hint="Blu (blue)"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_secondary"
+                        android:background="@drawable/bg_pill"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:textSize="11sp" />
+
+                    <!-- White -->
+                    <EditText
+                        android:id="@+id/etKeyWhite"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:hint="Bianco (white)"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_secondary"
+                        android:background="@drawable/bg_pill"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:textSize="11sp" />
+
+                    <!-- Orange -->
+                    <EditText
+                        android:id="@+id/etKeyOrange"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:hint="Ambra / Orange (orange)"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_secondary"
+                        android:background="@drawable/bg_pill"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:textSize="11sp" />
+
+                    <!-- Cyan -->
+                    <EditText
+                        android:id="@+id/etKeyCyan"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:hint="Ciano (cyan)"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_secondary"
+                        android:background="@drawable/bg_pill"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:textSize="11sp" />
+
+                    <!-- Purple -->
+                    <EditText
+                        android:id="@+id/etKeyPurple"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:hint="Viola (purple)"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_secondary"
+                        android:background="@drawable/bg_pill"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:textSize="11sp" />
+
+                    <!-- Fade -->
+                    <EditText
+                        android:id="@+id/etKeyFade"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:hint="Dissolvenza (fade)"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_secondary"
+                        android:background="@drawable/bg_pill"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:textSize="11sp" />
+
+                    <!-- Strobe -->
+                    <EditText
+                        android:id="@+id/etKeyStrobe"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:hint="Strobo (strobe)"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_secondary"
+                        android:background="@drawable/bg_pill"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:textSize="11sp" />
+                </GridLayout>
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

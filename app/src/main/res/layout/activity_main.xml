@@ -1,0 +1,627 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#07090E"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp">
+
+    <!-- Top Navigation Header -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:src="@drawable/ic_ambient_app"
+                android:contentDescription="@string/app_name" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginStart="12dp">
+
+                <TextView
+                    android:id="@+id/tvAppTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="DREAMCOLOR COCKPIT"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="STRISCIA LED INDIRIZZABILE • CONTROLLO 20-KEY"
+                    android:textColor="#6C7D93"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.1" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Hotspot Status Badge (Clickable to force enable / open settings) -->
+            <TextView
+                android:id="@+id/tvHotspotBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_pill_glow"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:text="📡 HOTSPOT..."
+                android:textColor="#00E5FF"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05"
+                android:layout_marginEnd="10dp" />
+
+            <!-- Status Pill with neon dot -->
+            <TextView
+                android:id="@+id/tvStatusBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_pill_glow"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:text="● ONLINE (TUYA)"
+                android:textColor="#00E676"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05"
+                android:layout_marginEnd="12dp" />
+
+            <!-- Settings Button -->
+            <ImageButton
+                android:id="@+id/btnSettings"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:background="@drawable/bg_pill_glow"
+                android:src="@android:drawable/ic_menu_manage"
+                android:contentDescription="@string/settings_title"
+                app:tint="#A0B2C6" />
+        </LinearLayout>
+    </RelativeLayout>
+
+    <!-- Hotspot Offline Alert Banner (shown only if Hotspot is OFF) -->
+    <LinearLayout
+        android:id="@+id/layoutHotspotAlert"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#26FF3D00"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="⚠️ Hotspot Wi-Fi disattivato: il trasmettitore Tuya non riceverà i comandi."
+            android:textColor="#FF8A80"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnQuickEnableHotspot"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="ATTIVA ORA"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:backgroundTint="#FF3D00"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
+
+    <!-- Main Content Horizontal Grid -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <!-- Left Pane: 3D Cockpit with Dynamic Strips + Master Power Button -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.36"
+            android:orientation="vertical"
+            android:background="@drawable/bg_glass_card"
+            android:padding="12dp"
+            android:layout_marginEnd="10dp">
+
+            <com.junsun.ambientlight.views.CockpitView
+                android:id="@+id/cockpitView"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Master Power Toggle Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPower"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="6dp"
+                android:backgroundTint="#FF1744"
+                android:text="⏻  SPEGNI AMBIENT LIGHT"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.06"
+                app:cornerRadius="14dp" />
+        </LinearLayout>
+
+        <!-- Right Pane: DreamColor 20-Key Interface -->
+        <ScrollView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.64"
+            android:fillViewport="true"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_glass_card"
+                android:padding="14dp">
+
+                <!-- 1. HUB DINAMICO: MUSIC SYNC + MODE +/- & SPEED +/- -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="GIOCHI DI LUCE DINAMICI &amp; MUSICA"
+                    android:textColor="#6C7D93"
+                    android:textSize="10.5sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- D-Pad Control Block -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="12dp">
+
+                    <!-- Music Sync Big Luxury Button -->
+                    <LinearLayout
+                        android:id="@+id/btnMusicSync"
+                        android:layout_width="0dp"
+                        android:layout_height="58dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_mood_cyber"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🎵"
+                            android:textSize="22sp"
+                            android:layout_marginEnd="8dp" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="RITMO MUSICA"
+                                android:textColor="#00E5FF"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:letterSpacing="0.06" />
+
+                            <TextView
+                                android:id="@+id/tvMusicSub"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Sincronizza con i bassi"
+                                android:textColor="#85A2C4"
+                                android:textSize="9.5sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Spacing -->
+                    <View
+                        android:layout_width="8dp"
+                        android:layout_height="1dp" />
+
+                    <!-- Mode Selectors: Prev / Next -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnModePrev"
+                        android:layout_width="0dp"
+                        android:layout_height="58dp"
+                        android:layout_weight="0.65"
+                        android:backgroundTint="#131A27"
+                        android:text="◀ MODALITÀ"
+                        android:textColor="#FFFFFF"
+                        android:textSize="10.5sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="#25354A"
+                        app:strokeWidth="1.2dp" />
+
+                    <View
+                        android:layout_width="6dp"
+                        android:layout_height="1dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnModeNext"
+                        android:layout_width="0dp"
+                        android:layout_height="58dp"
+                        android:layout_weight="0.65"
+                        android:backgroundTint="#131A27"
+                        android:text="MODALITÀ ▶"
+                        android:textColor="#FFFFFF"
+                        android:textSize="10.5sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="#25354A"
+                        app:strokeWidth="1.2dp" />
+                </LinearLayout>
+
+                <!-- Speed & IC tuning row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="14dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSpeedDown"
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="6dp"
+                        android:backgroundTint="#101520"
+                        android:text="VELOCITÀ - (SPEED -)"
+                        android:textColor="#8AA0B8"
+                        android:textSize="10sp"
+                        app:cornerRadius="8dp"
+                        app:strokeColor="#1E2B3C"
+                        app:strokeWidth="1dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSpeedUp"
+                        android:layout_width="0dp"
+                        android:layout_height="38dp"
+                        android:layout_weight="1"
+                        android:backgroundTint="#101520"
+                        android:text="VELOCITÀ + (SPEED +)"
+                        android:textColor="#8AA0B8"
+                        android:textSize="10sp"
+                        app:cornerRadius="8dp"
+                        app:strokeColor="#1E2B3C"
+                        app:strokeWidth="1dp" />
+                </LinearLayout>
+
+                <!-- 2. PALETTE 9 COLORI ESATTI DEL TELECOMANDO -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="I 9 COLORI STATICI DEL TELECOMANDO"
+                    android:textColor="#6C7D93"
+                    android:textSize="10.5sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08"
+                    android:layout_marginBottom="8dp" />
+
+                <GridLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="3"
+                    android:layout_marginBottom="14dp">
+
+                    <!-- Row 1: R, G, B -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnColorR"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:backgroundTint="#FF1744"
+                        android:text="R (ROSSO)"
+                        android:textColor="#FFFFFF"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="#FF5252"
+                        app:strokeWidth="1.5dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnColorG"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:backgroundTint="#00E676"
+                        android:text="G (VERDE)"
+                        android:textColor="#07090E"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="#69F0AE"
+                        app:strokeWidth="1.5dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnColorB"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:backgroundTint="#2979FF"
+                        android:text="B (BLU)"
+                        android:textColor="#FFFFFF"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="#82B1FF"
+                        app:strokeWidth="1.5dp" />
+
+                    <!-- Row 2: Arancione, Verde Chiaro/Smeraldo, Blu Notte/Indaco -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnColorOrange"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:backgroundTint="#FF6D00"
+                        android:text="ARANCIONE"
+                        android:textColor="#FFFFFF"
+                        android:textSize="10.5sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="#FFAB40"
+                        app:strokeWidth="1.5dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnColorMint"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:backgroundTint="#00E5A3"
+                        android:text="SMERALDO"
+                        android:textColor="#07090E"
+                        android:textSize="10.5sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="#A7FFEB"
+                        app:strokeWidth="1.5dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnColorIndigo"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:backgroundTint="#3D5AFE"
+                        android:text="BLU INDACO"
+                        android:textColor="#FFFFFF"
+                        android:textSize="10.5sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="#8C9EFF"
+                        app:strokeWidth="1.5dp" />
+
+                    <!-- Row 3: Giallo, Ciano, Viola -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnColorYellow"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:backgroundTint="#FFEA00"
+                        android:text="GIALLO"
+                        android:textColor="#07090E"
+                        android:textSize="10.5sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="#FFFF8D"
+                        app:strokeWidth="1.5dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnColorCyan"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:backgroundTint="#00E5FF"
+                        android:text="CIANO"
+                        android:textColor="#07090E"
+                        android:textSize="10.5sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="#84FFFF"
+                        app:strokeWidth="1.5dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnColorPurple"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_columnWeight="1"
+                        android:layout_margin="3dp"
+                        android:backgroundTint="#D500F9"
+                        android:text="MAGENTA"
+                        android:textColor="#FFFFFF"
+                        android:textSize="10.5sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="#EA80FC"
+                        app:strokeWidth="1.5dp" />
+                </GridLayout>
+
+                <!-- 3. LUMINOSITÀ / DIMMING -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="6dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="LUMINOSITÀ (TASTI ☼- / ☼+)"
+                        android:textColor="#6C7D93"
+                        android:textSize="10.5sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.08" />
+
+                    <TextView
+                        android:id="@+id/tvBrightnessValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:text="80%"
+                        android:textColor="#00E5FF"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </RelativeLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="12dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDimDown"
+                        android:layout_width="48dp"
+                        android:layout_height="44dp"
+                        android:backgroundTint="#151D2A"
+                        android:text="☼-"
+                        android:textColor="#FFFFFF"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="#253448"
+                        app:strokeWidth="1.2dp" />
+
+                    <SeekBar
+                        android:id="@+id/sbBrightness"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:max="100"
+                        android:progress="80"
+                        android:progressDrawable="@drawable/seekbar_track"
+                        android:thumb="@drawable/seekbar_thumb"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDimUp"
+                        android:layout_width="48dp"
+                        android:layout_height="44dp"
+                        android:backgroundTint="#151D2A"
+                        android:text="☼+"
+                        android:textColor="#FFFFFF"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeColor="#253448"
+                        app:strokeWidth="1.2dp" />
+                </LinearLayout>
+
+                <!-- 4. IMPOSTAZIONI AVANZATE IC SET (PIXEL STRISCIA) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="IMPOSTAZIONE PIXEL IC:"
+                        android:textColor="#506175"
+                        android:textSize="9.5sp"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="8dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnIcMinus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:backgroundTint="#0E131C"
+                        android:text="— PIXEL"
+                        android:textColor="#6C7D93"
+                        android:textSize="9sp"
+                        app:cornerRadius="6dp"
+                        app:strokeColor="#1E2A3A"
+                        app:strokeWidth="1dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnIcSet"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp"
+                        android:backgroundTint="#0E131C"
+                        android:text="IC SET"
+                        android:textColor="#6C7D93"
+                        android:textSize="9sp"
+                        app:cornerRadius="6dp"
+                        app:strokeColor="#1E2A3A"
+                        app:strokeWidth="1dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnIcPlus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:backgroundTint="#0E131C"
+                        android:text="+ PIXEL"
+                        android:textColor="#6C7D93"
+                        android:textSize="9sp"
+                        app:cornerRadius="6dp"
+                        app:strokeColor="#1E2A3A"
+                        app:strokeWidth="1dp" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+
+</LinearLayout>

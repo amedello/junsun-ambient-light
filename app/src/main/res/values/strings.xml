@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ambient Light</string>
+    <string name="car_ambient_title">JUNSUN AMBIENT LIGHTING</string>
+    <string name="status_connected">ONLINE (TUYA)</string>
+    <string name="status_demo">MODALITÀ DEMO</string>
+    <string name="power_on">ACCESO</string>
+    <string name="power_off">SPENTO</string>
+    <string name="brightness_label">LUMINOSITÀ</string>
+    <string name="presets_label">PROFILI ATMOSFERA</string>
+    <string name="colors_label">COLORI RAPIDI</string>
+    <string name="modes_label">EFFETTI DINAMICI</string>
+    <string name="settings_title">CONFIGURAZIONE TUYA</string>
+    <string name="save_settings">SALVA CONFIGURAZIONE</string>
+    <string name="test_connection">TEST CONNESSIONE</string>
+</resources>

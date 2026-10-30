@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.AmbientLight" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="colorPrimary">@color/accent_cyan</item>
+        <item name="colorPrimaryVariant">#00B0FF</item>
+        <item name="colorOnPrimary">#0A0D14</item>
+        <item name="colorSecondary">@color/accent_red</item>
+        <item name="android:windowBackground">@color/bg_cockpit</item>
+        <item name="android:statusBarColor">@color/bg_cockpit</item>
+        <item name="android:navigationBarColor">@color/bg_cockpit</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
+</resources>

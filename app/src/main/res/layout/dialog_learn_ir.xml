@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="480dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_card"
+    android:padding="20dp">
+
+    <!-- Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="APPRENDI DA TELECOMANDO FISICO"
+        android:textColor="@color/accent_cyan"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.05"
+        android:layout_marginBottom="6dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="1. Seleziona quale tasto vuoi associare.\n2. Clicca su 'AVVIA ASCOLTO' e punta il telecomando verso l'emettitore Tuya.\n3. Premi il tasto corrispondente sul telecomando fisico."
+        android:textColor="@color/text_secondary"
+        android:textSize="11sp"
+        android:lineSpacingExtra="3dp"
+        android:layout_marginBottom="14dp" />
+
+    <!-- Key Selector -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TASTO DA CONFIGURARE:"
+        android:textColor="@color/text_primary"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="4dp" />
+
+    <Spinner
+        android:id="@+id/spKeyToLearn"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:background="@drawable/bg_pill"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:backgroundTint="@color/text_primary"
+        android:layout_marginBottom="14dp" />
+
+    <!-- Status & Progress -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+
+        <ProgressBar
+            android:id="@+id/pbLearning"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:visibility="gone"
+            android:indeterminateTint="@color/accent_red"
+            android:layout_marginEnd="10dp" />
+
+        <TextView
+            android:id="@+id/tvLearnStatus"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Pronto per la ricezione."
+            android:textColor="@color/text_primary"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- Actions -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCloseDialog"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="42dp"
+            android:text="CHIUDI"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:layout_marginEnd="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnStartLearn"
+            android:layout_width="wrap_content"
+            android:layout_height="42dp"
+            android:backgroundTint="#FF2A4D"
+            android:text="AVVIA ASCOLTO 📡"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:cornerRadius="10dp" />
+    </LinearLayout>
+
+</LinearLayout>
