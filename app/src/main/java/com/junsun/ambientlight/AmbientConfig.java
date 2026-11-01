@@ -12,6 +12,8 @@ public class AmbientConfig {
     public static final String KEY_SECRET = "tuya_secret";
     public static final String KEY_DEVICE_ID = "tuya_device_id";
     public static final String KEY_REMOTE_ID = "tuya_remote_id";
+    public static final String KEY_LOCAL_KEY = "tuya_local_key";
+    public static final String KEY_LAST_BLE_MAC = "tuya_last_ble_mac";
     public static final String KEY_REGION = "tuya_region";
     public static final String KEY_DEMO_MODE = "demo_mode";
 
@@ -45,6 +47,7 @@ public class AmbientConfig {
     public static final String DEFAULT_SECRET = "81152d6ed95943ce89568630f6fee2db";
     public static final String DEFAULT_DEVICE_ID = "bfd6492033f7bc99770az4";
     public static final String DEFAULT_REMOTE_ID = "bf970d329d9f1ec596tkhn";
+    public static final String DEFAULT_LOCAL_KEY = "6[L|qWR5-B-|R~z/";
     public static final String DEFAULT_REGION = "eu";
 
     private final SharedPreferences prefs;
@@ -53,15 +56,16 @@ public class AmbientConfig {
         this.prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
 
         // Migrazione automatica: sovrascrive le vecchie preferenze vuote o la modalità demo
-        if (prefs.getInt("config_ver", 0) < 6 || prefs.getString(KEY_CLIENT_ID, "").isEmpty()) {
+        if (prefs.getInt("config_ver", 0) < 7 || prefs.getString(KEY_CLIENT_ID, "").isEmpty() || !prefs.contains(KEY_LOCAL_KEY)) {
             prefs.edit()
                     .putString(KEY_CLIENT_ID, DEFAULT_CLIENT_ID)
                     .putString(KEY_SECRET, DEFAULT_SECRET)
                     .putString(KEY_DEVICE_ID, DEFAULT_DEVICE_ID)
                     .putString(KEY_REMOTE_ID, DEFAULT_REMOTE_ID)
+                    .putString(KEY_LOCAL_KEY, DEFAULT_LOCAL_KEY)
                     .putString(KEY_REGION, DEFAULT_REGION)
                     .putBoolean(KEY_DEMO_MODE, false)
-                    .putInt("config_ver", 6)
+                    .putInt("config_ver", 7)
                     .putString(KEY_MAP_PREFIX + BTN_POWER, "1793134114025")
                     .putString(KEY_MAP_PREFIX + BTN_BRIGHT_UP, "1793134137302")
                     .putString(KEY_MAP_PREFIX + BTN_BRIGHT_DOWN, "1793134154399")
@@ -109,6 +113,23 @@ public class AmbientConfig {
         return (val == null || val.trim().isEmpty()) ? DEFAULT_REMOTE_ID : val.trim();
     }
     public void setRemoteId(String val) { prefs.edit().putString(KEY_REMOTE_ID, val.trim()).apply(); }
+
+    public String getLocalKey() {
+        String val = prefs.getString(KEY_LOCAL_KEY, DEFAULT_LOCAL_KEY);
+        return (val == null || val.trim().isEmpty()) ? DEFAULT_LOCAL_KEY : val.trim();
+    }
+    public void setLocalKey(String val) { prefs.edit().putString(KEY_LOCAL_KEY, val.trim()).apply(); }
+
+    public String getLastBleMac() {
+        return prefs.getString(KEY_LAST_BLE_MAC, null);
+    }
+    public void setLastBleMac(String val) {
+        if (val == null) {
+            prefs.edit().remove(KEY_LAST_BLE_MAC).apply();
+        } else {
+            prefs.edit().putString(KEY_LAST_BLE_MAC, val.trim()).apply();
+        }
+    }
 
     public String getRegion() {
         String val = prefs.getString(KEY_REGION, DEFAULT_REGION);
