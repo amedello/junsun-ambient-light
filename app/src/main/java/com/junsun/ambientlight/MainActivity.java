@@ -12,6 +12,8 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.List;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
@@ -37,6 +39,8 @@ public class MainActivity extends AppCompatActivity {
     private int currentColor;
     private int currentBrightness = 80;
 
+    private String bleStatusString = null;
+
     private final Handler hotspotMonitorHandler = new Handler(Looper.getMainLooper());
     private final Runnable hotspotMonitorRunnable = new Runnable() {
         @Override
@@ -57,18 +61,53 @@ public class MainActivity extends AppCompatActivity {
         bleManager = new TuyaBleManager(this, config);
         bleManager.setStateListener(new TuyaBleManager.BleStateListener() {
             @Override
-            public void onConnected(String deviceName, String mac) {
-                runOnUiThread(() -> checkAndRefreshHotspotStatus());
+            public void onScanning() {
+                runOnUiThread(() -> {
+                    bleStatusString = "⚡ BLE: RICERCA S06...";
+                    checkAndRefreshHotspotStatus();
+                });
+            }
+
+            @Override
+            public void onConnecting(String deviceName, String mac) {
+                runOnUiThread(() -> {
+                    bleStatusString = "⚡ BLE: CONNETTO " + (deviceName != null ? deviceName : mac) + "...";
+                    checkAndRefreshHotspotStatus();
+                });
+            }
+
+            @Override
+            public void onHandshaking(String stepInfo) {
+                runOnUiThread(() -> {
+                    bleStatusString = "⚡ BLE: " + stepInfo;
+                    checkAndRefreshHotspotStatus();
+                });
+            }
+
+            @Override
+            public void onAuthenticated(String deviceName, String mac) {
+                runOnUiThread(() -> {
+                    bleStatusString = "⚡ BLE PRONTO (" + (deviceName != null ? deviceName : mac) + ")";
+                    Toast.makeText(MainActivity.this, "✅ Tuya S06 Autenticato al 100% (Offline)", Toast.LENGTH_SHORT).show();
+                    checkAndRefreshHotspotStatus();
+                });
+            }
+
+            @Override
+            public void onHandshakeFailed(String reason) {
+                runOnUiThread(() -> {
+                    bleStatusString = "⚠️ " + reason;
+                    Toast.makeText(MainActivity.this, "Handshake BLE non completato: tocca ● per dettagli", Toast.LENGTH_LONG).show();
+                    checkAndRefreshHotspotStatus();
+                });
             }
 
             @Override
             public void onDisconnected() {
-                runOnUiThread(() -> checkAndRefreshHotspotStatus());
-            }
-
-            @Override
-            public void onScanning() {
-                runOnUiThread(() -> checkAndRefreshHotspotStatus());
+                runOnUiThread(() -> {
+                    bleStatusString = null;
+                    checkAndRefreshHotspotStatus();
+                });
             }
         });
 
@@ -161,7 +200,15 @@ public class MainActivity extends AppCompatActivity {
         btnMusicSync = findViewById(R.id.btnMusicSync);
         sbBrightness = findViewById(R.id.sbBrightness);
 
+        tvStatusBadge.setOnClickListener(v -> showBleDiagnosticsDialog());
         tvHotspotBadge.setOnClickListener(v -> HotspotManager.openHotspotSettings(MainActivity.this));
+        tvHotspotBadge.setOnLongClickListener(v -> {
+            if (bleManager != null) {
+                bleManager.resetAndScan();
+                android.widget.Toast.makeText(MainActivity.this, "Reset BLE: cache azzerata e nuova scansione...", android.widget.Toast.LENGTH_SHORT).show();
+            }
+            return true;
+        });
         if (btnQuickEnableHotspot != null) {
             btnQuickEnableHotspot.setOnClickListener(v -> HotspotManager.openHotspotSettings(MainActivity.this));
         }
@@ -286,29 +333,66 @@ public class MainActivity extends AppCompatActivity {
 
     private void sendTuyaCommand(String actionKey, String defaultTuyaKey) {
         final String mappedKey = config.getKeyMapping(actionKey, defaultTuyaKey);
+        final String rawIrBase64 = AmbientConfig.getRawIrBase64(actionKey);
+        final String bleKeyToSend = (rawIrBase64 != null && !rawIrBase64.isEmpty()) ? rawIrBase64 : mappedKey;
 
-        // Se BLE è connesso, invia direttamente via BLE (funziona offline al 100% senza internet né hotspot)
-        if (bleManager != null && bleManager.isConnected()) {
-            bleManager.sendRemoteKey(mappedKey, new TuyaBleManager.BleCallback() {
+        // Se BLE è autenticato e pronto (con session_key verificata), invia direttamente via BLE offline
+        if (bleManager != null && bleManager.isAuthenticated()) {
+            bleManager.sendRemoteKey(bleKeyToSend, new TuyaBleManager.BleCallback() {
                 @Override
                 public void onSuccess(String message) {
-                    // Esecuzione istantanea e silenziosa via Bluetooth LE
+                    Toast.makeText(MainActivity.this, "⚡ IR emesso via BLE (Offline)", Toast.LENGTH_SHORT).show();
                 }
 
                 @Override
                 public void onError(String error) {
-                    // Fallback automatico via Cloud API se BLE ha un'interferenza temporanea
+                    Toast.makeText(MainActivity.this, "⚠️ Fallito invio BLE: " + error, Toast.LENGTH_SHORT).show();
                     sendViaCloud(mappedKey);
                 }
             });
             return;
         }
 
-        // Se BLE non è connesso, prova ad avviare la connessione e invia via Cloud
+        // Se BLE è connesso ma non ancora autenticato (handshake in corso)
+        if (bleManager != null && bleManager.isConnected()) {
+            Toast.makeText(MainActivity.this, "Handshake BLE in corso... Inoltro via Wi-Fi", Toast.LENGTH_SHORT).show();
+            sendViaCloud(mappedKey);
+            return;
+        }
+
+        // Se BLE non è connesso, avvia auto-connect in background e invia via Cloud
         if (bleManager != null && !bleManager.isConnected()) {
             bleManager.startAutoConnect();
         }
         sendViaCloud(mappedKey);
+    }
+
+    private void showBleDiagnosticsDialog() {
+        if (bleManager == null) return;
+        List<String> logs = bleManager.getDiagnosticLogs();
+        StringBuilder sb = new StringBuilder();
+        sb.append("Stato: ").append(bleManager.isAuthenticated() ? "● AUTENTICATO (100% OFFLINE)" : (bleManager.isConnected() ? "● CONNESSO (Handshake in corso)" : "● DISCONNESSO")).append("\n");
+        sb.append("MAC Target: ").append(config.getLastBleMac() != null ? config.getLastBleMac() : "50:8B:B9:50:F6:6D").append("\n");
+        sb.append("Versione Protocollo: v").append(bleManager.getProtocolVersion()).append(" (0x").append(Integer.toHexString(bleManager.getProtocolVersion() << 4)).append(")\n");
+        sb.append("Session Key: ").append(bleManager.hasSessionKey() ? "CALCOLATA (OK)" : "NON PRESENTE").append("\n\n");
+        sb.append("--- REGISTRO EVENTI BLE ---\n");
+        if (logs.isEmpty()) {
+            sb.append("(Nessun evento registrato)\n");
+        } else {
+            for (String l : logs) {
+                sb.append(l).append("\n");
+            }
+        }
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Diagnostica Tuya S06 BLE")
+                .setMessage(sb.toString())
+                .setPositiveButton("Chiudi", null)
+                .setNeutralButton("Reset & Re-scan", (dialog, which) -> {
+                    bleManager.resetAndScan();
+                    Toast.makeText(this, "Reset BLE: nuova scansione avviata...", Toast.LENGTH_SHORT).show();
+                })
+                .show();
     }
 
     private void sendViaCloud(String mappedKey) {
@@ -363,11 +447,16 @@ public class MainActivity extends AppCompatActivity {
     private void checkAndRefreshHotspotStatus() {
         boolean isHotspotOn = HotspotManager.isHotspotActive(this);
         boolean isInternetOn = HotspotManager.isInternetConnected(this);
+        boolean isBleAuth = bleManager != null && bleManager.isAuthenticated();
         boolean isBleConnected = bleManager != null && bleManager.isConnected();
 
         if (tvHotspotBadge != null) {
-            if (isBleConnected) {
-                tvHotspotBadge.setText("⚡ TUYA BLE ATTIVO");
+            if (isBleAuth) {
+                tvHotspotBadge.setText(bleStatusString != null ? bleStatusString : "⚡ TUYA BLE PRONTO");
+                tvHotspotBadge.setTextColor(Color.parseColor("#00E676"));
+                if (layoutHotspotAlert != null) layoutHotspotAlert.setVisibility(View.GONE);
+            } else if (isBleConnected) {
+                tvHotspotBadge.setText(bleStatusString != null ? bleStatusString : "⚡ TUYA BLE IN CONNESSIONE...");
                 tvHotspotBadge.setTextColor(Color.parseColor("#00E5FF"));
                 if (layoutHotspotAlert != null) layoutHotspotAlert.setVisibility(View.GONE);
             } else if (isHotspotOn) {
@@ -380,7 +469,7 @@ public class MainActivity extends AppCompatActivity {
                 tvHotspotBadge.setTextColor(Color.parseColor("#00E5FF"));
                 if (layoutHotspotAlert != null) layoutHotspotAlert.setVisibility(View.GONE);
             } else {
-                tvHotspotBadge.setText("⚠️ HOTSPOT SPENTO");
+                tvHotspotBadge.setText(bleStatusString != null ? bleStatusString : "⚠️ OFFLINE (ATTIVA HOTSPOT O BLE)");
                 tvHotspotBadge.setTextColor(Color.parseColor("#FF5252"));
                 if (layoutHotspotAlert != null) layoutHotspotAlert.setVisibility(View.VISIBLE);
             }
@@ -390,9 +479,12 @@ public class MainActivity extends AppCompatActivity {
             if (config.isDemoMode()) {
                 tvStatusBadge.setText("● DEMO");
                 tvStatusBadge.setTextColor(Color.parseColor("#FFAB00"));
-            } else if (isBleConnected) {
-                tvStatusBadge.setText("● BLE CONNESSO");
+            } else if (isBleAuth) {
+                tvStatusBadge.setText("● BLE AUTENTICATO");
                 tvStatusBadge.setTextColor(Color.parseColor("#00E676"));
+            } else if (isBleConnected) {
+                tvStatusBadge.setText("● BLE HANDSHAKE");
+                tvStatusBadge.setTextColor(Color.parseColor("#00E5FF"));
             } else if (isInternetOn) {
                 tvStatusBadge.setText("● TUYA ONLINE");
                 tvStatusBadge.setTextColor(Color.parseColor("#00E676"));
