@@ -72,11 +72,12 @@ public class TuyaBleManager {
     // Standard CCCD Descriptor (Client Characteristic Configuration)
     public static final UUID CCCD_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
-    // Comandi Tuya BLE
+    // Comandi Tuya BLE ufficiali (specifiche tuya_ble_api.h)
     public static final int CMD_DEVICE_INFO_REQ = 0x0000;
     public static final int CMD_PAIR_REQ = 0x0001;
-    public static final int CMD_DATA_POINTS = 0x0002;
-    public static final int CMD_STATUS_QUERY = 0x0003;
+    public static final int CMD_STATUS_INQUIRY = 0x0002;
+    public static final int CMD_STATUS_REPORT = 0x0003;
+    public static final int CMD_DATA_POINTS = 0x0004; // FRM_DP_DATA_WRITE ufficiale Tuya BLE
 
     public interface BleCallback {
         void onSuccess(String message);
@@ -722,7 +723,7 @@ public class TuyaBleManager {
                     final BluetoothDevice dev = bluetoothGatt.getDevice();
                     mainHandler.post(() -> stateListener.onAuthenticated(dev.getName(), dev.getAddress()));
                 }
-            } else if (code == CMD_DATA_POINTS || code == 0x8001 || code == 0x8006) {
+            } else if (code == CMD_DATA_POINTS || code == 0x0002 || code == 0x0004 || code == 0x8001 || code == 0x8004 || code == 0x8006) {
                 log("ACK DP ricevuto da S06 (0x" + Integer.toHexString(code) + ")! Comando IR eseguito dall'hardware!");
             }
         } catch (Exception e) {
@@ -747,36 +748,34 @@ public class TuyaBleManager {
 
         executor.execute(() -> {
             try {
-                // Nel protocollo Tuya IR locale DP 201, il codice IR appreso in Base64
-                // viene inserito in key1 prefissato dal tipo formato '1' (learned raw pulses)
-                String code;
-                if (rawOrKeyId == null || rawOrKeyId.isEmpty()) {
-                    code = "1";
-                } else if (rawOrKeyId.startsWith("1")) {
-                    code = rawOrKeyId;
-                } else {
-                    code = "1" + rawOrKeyId;
-                }
+                // Nel protocollo Tuya IR DP 201, il codice IR è la sequenza Base64 PURA
+                String code = (rawOrKeyId != null) ? rawOrKeyId.trim() : "";
 
-                // Costruzione del JSON ufficiale per Tuya IR Blaster DP 201 (ir_send)
-                // Conforme alle specifiche Tuya / TinyTuya: control, type, head, key1
+                // Costruzione del JSON ufficiale Tuya per DP 201 (ir_send)
+                // Conforme alle specifiche Tuya: control, type, head, key1
                 String irJson = "{\"control\":\"send_ir\",\"head\":\"\",\"key1\":\"" + code + "\",\"type\":0}";
                 byte[] jsonBytes = irJson.getBytes(StandardCharsets.UTF_8);
 
-                // Packaging DP formato Tuya BLE protocol v3:
-                // [DP_ID: 1 byte (0xC9 = 201)] [DP_TYPE: 1 byte (0x03 = String)] [DP_LEN: 1 byte (0..255)] [JSON...]
+                // Packaging DP conforme alle specifiche ufficiali Tuya Data Point TLV (2 byte length big-endian):
+                // [DP_ID: 1 byte (0xC9 = 201)]
+                // [DP_TYPE: 1 byte (0x03 = String)]
+                // [DP_LEN_H: 1 byte (len >> 8)]
+                // [DP_LEN_L: 1 byte (len & 0xFF)]
+                // [JSON bytes...]
                 ByteArrayOutputStream dpStream = new ByteArrayOutputStream();
                 dpStream.write(0xC9); // DP 201
                 dpStream.write(0x03); // Type String
-                dpStream.write(jsonBytes.length & 0xFF); // 1-byte length (< 256 byte)
+                dpStream.write((jsonBytes.length >> 8) & 0xFF); // Length HIGH byte
+                dpStream.write(jsonBytes.length & 0xFF);        // Length LOW byte
                 dpStream.write(jsonBytes);
                 byte[] dpPayload = dpStream.toByteArray();
 
                 // Cifratura e frammentazione Tuya BLE con sessionKey o loginKey
                 byte[] key = (sessionKey != null) ? sessionKey : loginKey;
+                // CMD_DATA_POINTS = 0x0004 (FRM_DP_DATA_WRITE ufficiale Tuya BLE)
                 List<byte[]> packets = buildPackets(sequenceNumber++, CMD_DATA_POINTS, dpPayload, 0, key, (byte) 0x05);
 
-                log("Trasmissione DP 201 IR: " + dpPayload.length + " byte (json=" + jsonBytes.length + "b) in " + packets.size() + " frammenti BLE...");
+                log("Trasmissione DP 201 IR: " + dpPayload.length + " byte (json=" + jsonBytes.length + "b, TLV 2-byte) con CMD 0x0004 in " + packets.size() + " frammenti BLE...");
                 boolean success = sendPackets(packets);
 
                 mainHandler.post(() -> {
