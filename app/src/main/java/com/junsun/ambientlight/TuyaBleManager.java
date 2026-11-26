@@ -220,54 +220,29 @@ public class TuyaBleManager {
 
         try {
             isScanning = true;
-            log("Avvio scansione BLE Tuya con filtri mirati...");
+            log("Avvio scansione BLE attiva ad ampio spettro (nessun filtro hardware restrittivo)...");
             if (stateListener != null) {
                 mainHandler.post(() -> stateListener.onScanning());
             }
 
-            List<ScanFilter> filters = new ArrayList<>();
-            String targetMac = config.getLastBleMac();
-            if (targetMac == null || targetMac.isEmpty() || !BluetoothAdapter.checkBluetoothAddress(targetMac)) {
-                targetMac = "50:8B:B9:50:F6:6D";
-            }
-            // Filtro hardware mirato sul MAC specifico del blaster S06 (aggancio istantaneo)
-            filters.add(new ScanFilter.Builder().setDeviceAddress(targetMac).build());
-            // Filtri sui servizi Tuya noti
-            filters.add(new ScanFilter.Builder().setServiceUuid(new ParcelUuid(TUYA_SERVICE_UUID)).build());
-            // Filtro Tuya Manufacturer Data (Company ID 0x07D0)
-            filters.add(new ScanFilter.Builder().setManufacturerData(0x07D0, new byte[0]).build());
-
             ScanSettings settings = new ScanSettings.Builder()
                     .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                     .build();
 
-            bleScanner.startScan(filters, settings, scanCallback);
+            // Scansione ad ampio spettro senza filtri kernel per evitare bug di scarto pacchetti nei driver BT UIS8581
+            bleScanner.startScan(null, settings, scanCallback);
 
+            // Timeout di sicurezza a 12 secondi
             mainHandler.postDelayed(() -> {
                 if (isScanning && !isConnected()) {
+                    log("Timeout scansione BLE (12s). Nuovo tentativo tra 3s...");
                     stopScanning();
-                    startFallbackScan();
+                    mainHandler.postDelayed(this::startAutoConnect, 3000);
                 }
-            }, 10000);
+            }, 12000);
 
         } catch (Exception e) {
             log("Errore avvio scansione BLE: " + e.getMessage());
-            isScanning = false;
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    private void startFallbackScan() {
-        if (!isBluetoothAvailable() || bleScanner == null || isConnected() || isScanning) return;
-        try {
-            isScanning = true;
-            log("Avvio scansione BLE generica senza filtri (fallback)...");
-            ScanSettings settings = new ScanSettings.Builder()
-                    .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-                    .build();
-            bleScanner.startScan(fallbackScanCallback);
-            mainHandler.postDelayed(this::stopScanning, 10000);
-        } catch (Exception e) {
             isScanning = false;
         }
     }
@@ -277,7 +252,6 @@ public class TuyaBleManager {
         if (bleScanner != null && isScanning) {
             try {
                 bleScanner.stopScan(scanCallback);
-                bleScanner.stopScan(fallbackScanCallback);
             } catch (Exception ignored) {}
             isScanning = false;
             log("Scansione BLE arrestata");
@@ -290,19 +264,11 @@ public class TuyaBleManager {
         public void onScanResult(int callbackType, ScanResult result) {
             inspectAndConnect(result);
         }
-    };
 
-    private final ScanCallback fallbackScanCallback = new ScanCallback() {
         @Override
-        @SuppressLint("MissingPermission")
-        public void onScanResult(int callbackType, ScanResult result) {
-            if (result == null || result.getDevice() == null) return;
-            String name = result.getDevice().getName();
-            String mac = result.getDevice().getAddress();
-            if (name != null && (name.contains("TY") || name.contains("Tuya") || name.contains("S06") ||
-                    name.contains("Smart") || name.contains("CB3S") || name.contains("Ir"))) {
-                inspectAndConnect(result);
-            }
+        public void onScanFailed(int errorCode) {
+            log("Scansione BLE fallita con codice errore hardware: " + errorCode);
+            isScanning = false;
         }
     };
 
@@ -310,19 +276,56 @@ public class TuyaBleManager {
     private void inspectAndConnect(ScanResult result) {
         if (result == null || result.getDevice() == null) return;
         BluetoothDevice device = result.getDevice();
+        String mac = device.getAddress();
+        String name = device.getName();
 
-        // Controllo advertisement Tuya (Company ID 0x07D0)
+        String targetMac = config.getLastBleMac();
+        if (targetMac == null || targetMac.isEmpty() || !BluetoothAdapter.checkBluetoothAddress(targetMac)) {
+            targetMac = "50:8B:B9:50:F6:6D";
+        }
+
+        boolean match = false;
+        String matchReason = "";
+
+        // 1. Match primario per indirizzo MAC hardware
+        if (mac != null && (mac.equalsIgnoreCase(targetMac) || mac.equalsIgnoreCase("50:8B:B9:50:F6:6D"))) {
+            match = true;
+            matchReason = "MAC hardware diretto (" + mac + ")";
+        }
+
+        // 2. Match per dati di fabbrica Tuya (Company ID 0x07D0)
         ScanRecord record = result.getScanRecord();
-        if (record != null) {
+        if (!match && record != null) {
             byte[] mfd = record.getManufacturerSpecificData(0x07D0);
             if (mfd != null) {
-                log("Dati Tuya MFD rilevati (" + mfd.length + " byte): " + bytesToHex(mfd));
+                match = true;
+                matchReason = "Tuya MFD 0x07D0 (" + mfd.length + "b: " + bytesToHex(mfd) + ")";
             }
         }
 
-        log("Trovato dispositivo target: " + device.getName() + " [" + device.getAddress() + "]");
-        stopScanning();
-        connectToDevice(device);
+        // 3. Match per UUID Servizi Tuya
+        if (!match && record != null && record.getServiceUuids() != null) {
+            for (ParcelUuid pu : record.getServiceUuids()) {
+                if (pu.getUuid().equals(TUYA_SERVICE_UUID) || pu.getUuid().equals(TUYA_ALT_SERVICE_UUID) || pu.getUuid().equals(TUYA_LEGACY_SERVICE_UUID)) {
+                    match = true;
+                    matchReason = "Service UUID Tuya (" + pu.getUuid() + ")";
+                    break;
+                }
+            }
+        }
+
+        // 4. Match per nome del dispositivo
+        if (!match && name != null && (name.contains("TY") || name.contains("Tuya") || name.contains("S06") ||
+                name.contains("Smart") || name.contains("CB3S") || name.contains("Ir"))) {
+            match = true;
+            matchReason = "Nome dispositivo (" + name + ")";
+        }
+
+        if (match) {
+            log("Trovato blaster Tuya S06 tramite " + matchReason + " -> " + (name != null ? name : "Dispositivo BLE") + " [" + mac + "]");
+            stopScanning();
+            connectToDevice(device);
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -736,69 +739,124 @@ public class TuyaBleManager {
     }
 
     /**
-     * Invia un comando IR formattato per il Data Point 201 (ir_send).
-     * Riceve il codice Base64 della forma d'onda IR appresa (o ID tasto).
+     * Esegue il packaging e l'invio fisico di un pacchetto DP 201 (ir_send).
+     * @param code Stringa Base64 pura (forma d'onda a microsecondi) oppure ID tasto telecomando virtuale.
+     * @param logPrefix Etichetta diagnostica per il tracciamento dei log.
+     * @return true se tutti i frammenti GATT BLE sono stati confermati dall'hardware.
+     */
+    private boolean sendDp201Payload(String code, String logPrefix) {
+        if (code == null || code.trim().isEmpty() || !isConnected()) {
+            return false;
+        }
+
+        try {
+            String cleanCode = code.trim();
+            // Costruzione del JSON conforme alle specifiche Tuya per DP 201 (ir_send)
+            String irJson = "{\"control\":\"send_ir\",\"head\":\"\",\"key1\":\"" + cleanCode + "\",\"type\":0}";
+            byte[] jsonBytes = irJson.getBytes(StandardCharsets.UTF_8);
+
+            // Packaging DP conforme a specifiche ufficiali Tuya TLV (2 byte length big-endian):
+            // [0xC9 (DP 201)] [0x03 (Type String)] [LEN_H] [LEN_L] [JSON...]
+            ByteArrayOutputStream dpStream = new ByteArrayOutputStream();
+            dpStream.write(0xC9); // DP 201
+            dpStream.write(0x03); // Type String
+            dpStream.write((jsonBytes.length >> 8) & 0xFF); // Length HIGH byte
+            dpStream.write(jsonBytes.length & 0xFF);        // Length LOW byte
+            dpStream.write(jsonBytes);
+            byte[] dpPayload = dpStream.toByteArray();
+
+            // Cifratura e frammentazione Tuya BLE con sessionKey o loginKey
+            byte[] key = (sessionKey != null) ? sessionKey : loginKey;
+            List<byte[]> packets = buildPackets(sequenceNumber++, CMD_DATA_POINTS, dpPayload, 0, key, (byte) 0x05);
+
+            String preview = (cleanCode.length() > 24) ? cleanCode.substring(0, 18) + "..." : cleanCode;
+            log(logPrefix + " Invio DP 201: " + dpPayload.length + "b (" + packets.size() + " frammenti, val=\"" + preview + "\")...");
+            boolean ok = sendPackets(packets);
+            log(logPrefix + " Esito trasmissione: " + (ok ? "CONFERMATO (ACK)" : "FALLITO"));
+            return ok;
+        } catch (Exception e) {
+            log(logPrefix + " Errore packaging: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Invia un comando IR provando il Fallback Duale o la modalità selezionata:
+     * - Modalità A: Formato Raw Base64 (microsecondi di impulso IR appresi)
+     * - Modalità B: Formato Tuya Key ID (ID tasto telecomando virtuale salvato nel chip)
+     * In modalità DUAL (default), invia prima la forma grezza e subito dopo l'ID tasto a distanza di 75ms.
      */
     @SuppressLint("MissingPermission")
-    public void sendRemoteKey(final String rawOrKeyId, final BleCallback callback) {
+    public void sendRemoteKeyDual(final String rawBase64, final String keyId, final BleCallback callback) {
         if (!isConnected()) {
             if (callback != null) callback.onError("BLE non connesso al blaster Tuya");
             return;
         }
 
         if (!isAuthenticated || sessionKey == null) {
-            log("Avviso: Invio IR tentato senza session_key completata");
+            log("Avviso: Invio IR tentato con loginKey provvisoria (session_key non ancora negoziata)");
         }
 
         executor.execute(() -> {
             try {
-                // Nel protocollo Tuya IR DP 201, il codice IR è la sequenza Base64 PURA
-                String code = (rawOrKeyId != null) ? rawOrKeyId.trim() : "";
+                int sendMode = config.getBleSendMode();
+                boolean successA = false;
+                boolean successB = false;
 
-                // Costruzione del JSON ufficiale Tuya per DP 201 (ir_send)
-                // Conforme alle specifiche Tuya: control, type, head, key1
-                String irJson = "{\"control\":\"send_ir\",\"head\":\"\",\"key1\":\"" + code + "\",\"type\":0}";
-                byte[] jsonBytes = irJson.getBytes(StandardCharsets.UTF_8);
+                String cleanRaw = (rawBase64 != null) ? rawBase64.trim() : "";
+                String cleanKey = (keyId != null) ? keyId.trim() : "";
 
-                // Packaging DP conforme alle specifiche ufficiali Tuya Data Point TLV (2 byte length big-endian):
-                // [DP_ID: 1 byte (0xC9 = 201)]
-                // [DP_TYPE: 1 byte (0x03 = String)]
-                // [DP_LEN_H: 1 byte (len >> 8)]
-                // [DP_LEN_L: 1 byte (len & 0xFF)]
-                // [JSON bytes...]
-                ByteArrayOutputStream dpStream = new ByteArrayOutputStream();
-                dpStream.write(0xC9); // DP 201
-                dpStream.write(0x03); // Type String
-                dpStream.write((jsonBytes.length >> 8) & 0xFF); // Length HIGH byte
-                dpStream.write(jsonBytes.length & 0xFF);        // Length LOW byte
-                dpStream.write(jsonBytes);
-                byte[] dpPayload = dpStream.toByteArray();
+                if (sendMode == AmbientConfig.SEND_MODE_RAW_ONLY || sendMode == AmbientConfig.SEND_MODE_DUAL) {
+                    if (!cleanRaw.isEmpty()) {
+                        successA = sendDp201Payload(cleanRaw, "[Mod A - Raw Base64]");
+                    }
+                }
 
-                // Cifratura e frammentazione Tuya BLE con sessionKey o loginKey
-                byte[] key = (sessionKey != null) ? sessionKey : loginKey;
-                // CMD_DATA_POINTS = 0x0004 (FRM_DP_DATA_WRITE ufficiale Tuya BLE)
-                List<byte[]> packets = buildPackets(sequenceNumber++, CMD_DATA_POINTS, dpPayload, 0, key, (byte) 0x05);
+                if (sendMode == AmbientConfig.SEND_MODE_DUAL) {
+                    // Pausa tra i due pacchetti per permettere al chip Beken BK7231N di svuotare il buffer FIFO radio
+                    try {
+                        Thread.sleep(75);
+                    } catch (InterruptedException ignored) {}
+                }
 
-                log("Trasmissione DP 201 IR: " + dpPayload.length + " byte (json=" + jsonBytes.length + "b, TLV 2-byte) con CMD 0x0004 in " + packets.size() + " frammenti BLE...");
-                boolean success = sendPackets(packets);
+                if (sendMode == AmbientConfig.SEND_MODE_KEY_ID_ONLY || sendMode == AmbientConfig.SEND_MODE_DUAL) {
+                    if (!cleanKey.isEmpty() && !cleanKey.equals(cleanRaw)) {
+                        successB = sendDp201Payload(cleanKey, "[Mod B - Key ID]");
+                    }
+                }
+
+                final boolean finalSuccess = (sendMode == AmbientConfig.SEND_MODE_RAW_ONLY) ? successA :
+                        (sendMode == AmbientConfig.SEND_MODE_KEY_ID_ONLY) ? successB :
+                                (successA || successB);
+
+                final String modeDesc = (sendMode == AmbientConfig.SEND_MODE_DUAL) ? "Dual Fallback (Base64 + KeyID)" :
+                        (sendMode == AmbientConfig.SEND_MODE_RAW_ONLY) ? "Solo Base64 Raw" : "Solo Key ID";
 
                 mainHandler.post(() -> {
-                    if (success) {
-                        log("Comando IR inviato con successo via BLE (" + packets.size() + " frammenti confermati)!");
-                        if (callback != null) callback.onSuccess("Comando IR inviato con successo via BLE!");
+                    if (finalSuccess) {
+                        log("Comando IR eseguito con successo (" + modeDesc + ")!");
+                        if (callback != null) callback.onSuccess("IR inviato (" + modeDesc + ")");
                     } else {
-                        log("Errore trasmissione frammenti BLE comando IR");
-                        if (callback != null) callback.onError("Errore scrittura pacchetti BLE");
+                        log("Errore trasmissione pacchetti BLE (" + modeDesc + ")");
+                        if (callback != null) callback.onError("Errore scrittura BLE (" + modeDesc + ")");
                     }
                 });
 
             } catch (Exception e) {
-                log("Errore trasmissione comando IR via BLE: " + e.getMessage());
+                log("Eccezione durante invio comando IR duale: " + e.getMessage());
                 mainHandler.post(() -> {
                     if (callback != null) callback.onError("Errore BLE: " + e.getMessage());
                 });
             }
         });
+    }
+
+    /**
+     * Invia un comando IR specificando un singolo valore (raw o keyId)
+     */
+    @SuppressLint("MissingPermission")
+    public void sendRemoteKey(final String rawOrKeyId, final BleCallback callback) {
+        sendRemoteKeyDual(rawOrKeyId, rawOrKeyId, callback);
     }
 
     /**

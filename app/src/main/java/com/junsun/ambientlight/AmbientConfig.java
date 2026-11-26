@@ -16,6 +16,12 @@ public class AmbientConfig {
     public static final String KEY_LAST_BLE_MAC = "tuya_last_ble_mac";
     public static final String KEY_REGION = "tuya_region";
     public static final String KEY_DEMO_MODE = "demo_mode";
+    public static final String KEY_BLE_SEND_MODE = "ble_send_mode";
+
+    // Modalità di trasmissione IR BLE
+    public static final int SEND_MODE_DUAL = 0;        // Fallback Duale (Base64 Raw + Tuya Key ID) [Raccomandato]
+    public static final int SEND_MODE_RAW_ONLY = 1;    // Solo Base64 Raw (Forma d'onda impulsi)
+    public static final int SEND_MODE_KEY_ID_ONLY = 2; // Solo Tuya Virtual Key ID (ID tasto telecomando)
 
     public static final String KEY_MAP_PREFIX = "map_key_";
 
@@ -141,6 +147,13 @@ public class AmbientConfig {
         return prefs.getBoolean(KEY_DEMO_MODE, false);
     }
     public void setDemoMode(boolean val) { prefs.edit().putBoolean(KEY_DEMO_MODE, val).apply(); }
+
+    public int getBleSendMode() {
+        return prefs.getInt(KEY_BLE_SEND_MODE, SEND_MODE_DUAL);
+    }
+    public void setBleSendMode(int mode) {
+        prefs.edit().putInt(KEY_BLE_SEND_MODE, mode).apply();
+    }
 
     public int getLastColor() { return prefs.getInt("last_color", Color.parseColor("#00E5FF")); }
     public void setLastColor(int color) { prefs.edit().putInt("last_color", color).apply(); }

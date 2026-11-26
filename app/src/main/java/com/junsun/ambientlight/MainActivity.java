@@ -334,19 +334,18 @@ public class MainActivity extends AppCompatActivity {
     private void sendTuyaCommand(String actionKey, String defaultTuyaKey) {
         final String mappedKey = config.getKeyMapping(actionKey, defaultTuyaKey);
         final String rawIrBase64 = AmbientConfig.getRawIrBase64(actionKey);
-        final String bleKeyToSend = (rawIrBase64 != null && !rawIrBase64.isEmpty()) ? rawIrBase64 : mappedKey;
 
-        // Se BLE è autenticato e pronto (con session_key verificata), invia direttamente via BLE offline
+        // Se BLE è autenticato e pronto (con session_key verificata), invia via BLE offline con Fallback Duale
         if (bleManager != null && bleManager.isAuthenticated()) {
-            bleManager.sendRemoteKey(bleKeyToSend, new TuyaBleManager.BleCallback() {
+            bleManager.sendRemoteKeyDual(rawIrBase64, mappedKey, new TuyaBleManager.BleCallback() {
                 @Override
                 public void onSuccess(String message) {
-                    Toast.makeText(MainActivity.this, "⚡ IR emesso via BLE (Offline)", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "⚡ " + message, Toast.LENGTH_SHORT).show();
                 }
 
                 @Override
                 public void onError(String error) {
-                    Toast.makeText(MainActivity.this, "⚠️ Fallito invio BLE: " + error, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "⚠️ Invio BLE: " + error, Toast.LENGTH_SHORT).show();
                     sendViaCloud(mappedKey);
                 }
             });
@@ -370,9 +369,14 @@ public class MainActivity extends AppCompatActivity {
     private void showBleDiagnosticsDialog() {
         if (bleManager == null) return;
         List<String> logs = bleManager.getDiagnosticLogs();
+        int currentSendMode = config.getBleSendMode();
+        String sendModeName = (currentSendMode == AmbientConfig.SEND_MODE_DUAL) ? "Fallback Duale (Base64 + Key ID)" :
+                (currentSendMode == AmbientConfig.SEND_MODE_RAW_ONLY ? "Solo Base64 Raw" : "Solo Key ID Tuya");
+
         StringBuilder sb = new StringBuilder();
         sb.append("Stato: ").append(bleManager.isAuthenticated() ? "● AUTENTICATO (100% OFFLINE)" : (bleManager.isConnected() ? "● CONNESSO (Handshake in corso)" : "● DISCONNESSO")).append("\n");
         sb.append("MAC Target: ").append(config.getLastBleMac() != null ? config.getLastBleMac() : "50:8B:B9:50:F6:6D").append("\n");
+        sb.append("Modalità Invio: ").append(sendModeName).append("\n");
         sb.append("Versione Protocollo: v").append(bleManager.getProtocolVersion()).append(" (0x").append(Integer.toHexString(bleManager.getProtocolVersion() << 4)).append(")\n");
         sb.append("Session Key: ").append(bleManager.hasSessionKey() ? "CALCOLATA (OK)" : "NON PRESENTE").append("\n\n");
         sb.append("--- REGISTRO EVENTI BLE ---\n");
@@ -388,10 +392,32 @@ public class MainActivity extends AppCompatActivity {
                 .setTitle("Diagnostica Tuya S06 BLE")
                 .setMessage(sb.toString())
                 .setPositiveButton("Chiudi", null)
+                .setNegativeButton("Cambia Modalità", (dialog, which) -> showSendModeSelectionDialog())
                 .setNeutralButton("Reset & Re-scan", (dialog, which) -> {
                     bleManager.resetAndScan();
                     Toast.makeText(this, "Reset BLE: nuova scansione avviata...", Toast.LENGTH_SHORT).show();
                 })
+                .show();
+    }
+
+    private void showSendModeSelectionDialog() {
+        final String[] options = new String[]{
+                "1. Fallback Duale: Base64 + Key ID (Raccomandato)",
+                "2. Solo Base64 Raw (Forma d'onda impulsi)",
+                "3. Solo Key ID (Telecomando Virtuale Tuya)"
+        };
+        int current = config.getBleSendMode();
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Seleziona Modalità di Invio BLE")
+                .setSingleChoiceItems(options, current, (dialog, which) -> {
+                    config.setBleSendMode(which);
+                    String selected = (which == AmbientConfig.SEND_MODE_DUAL) ? "Fallback Duale" :
+                            (which == AmbientConfig.SEND_MODE_RAW_ONLY ? "Solo Base64" : "Solo Key ID");
+                    Toast.makeText(this, "Impostato: " + selected, Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                    showBleDiagnosticsDialog();
+                })
+                .setNegativeButton("Annulla", null)
                 .show();
     }
 
