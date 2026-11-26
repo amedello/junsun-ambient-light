@@ -166,8 +166,8 @@ public class MainActivity extends AppCompatActivity {
                 java.lang.reflect.Method forName = Class.class.getDeclaredMethod("forName", String.class);
                 java.lang.reflect.Method getDeclaredMethod = Class.class.getDeclaredMethod("getDeclaredMethod", String.class, Class[].class);
                 Class<?> vmRuntimeClass = (Class<?>) forName.invoke(null, "dalvik.system.VMRuntime");
-                java.lang.reflect.Method getRuntime = (Method) getDeclaredMethod.invoke(vmRuntimeClass, "getRuntime", (Object[]) null);
-                java.lang.reflect.Method setHiddenApiExemptions = (Method) getDeclaredMethod.invoke(vmRuntimeClass, "setHiddenApiExemptions", new Class<?>[]{String[].class});
+                java.lang.reflect.Method getRuntime = (java.lang.reflect.Method) getDeclaredMethod.invoke(vmRuntimeClass, "getRuntime", (Object[]) null);
+                java.lang.reflect.Method setHiddenApiExemptions = (java.lang.reflect.Method) getDeclaredMethod.invoke(vmRuntimeClass, "setHiddenApiExemptions", new Class<?>[]{String[].class});
                 Object vmRuntime = getRuntime.invoke(null);
                 setHiddenApiExemptions.invoke(vmRuntime, new Object[]{new String[]{"L"}});
             } catch (Throwable ignored) {}
