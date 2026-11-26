@@ -206,19 +206,9 @@ public class TuyaBleManager {
             return;
         }
 
-        String lastMac = config.getLastBleMac();
-        if (lastMac != null && BluetoothAdapter.checkBluetoothAddress(lastMac)) {
-            log("Connessione diretta rapida all'ultimo MAC: " + lastMac);
-            try {
-                BluetoothDevice device = bluetoothAdapter.getRemoteDevice(lastMac);
-                connectToDevice(device);
-                return;
-            } catch (Exception e) {
-                log("Errore connessione rapida MAC: " + e.getMessage() + ", riavvio scansione");
-                config.setLastBleMac(null);
-            }
-        }
-
+        // Su Android 10 Automotive, la connessione diretta a freddo senza scansione
+        // fallisce sistematicamente con GATT status 133.
+        // Avviamo sempre la scansione ultra-rapida con filtro mirato sul MAC per aggancio immediato!
         startScanning();
     }
 
@@ -236,9 +226,16 @@ public class TuyaBleManager {
             }
 
             List<ScanFilter> filters = new ArrayList<>();
+            String targetMac = config.getLastBleMac();
+            if (targetMac == null || targetMac.isEmpty() || !BluetoothAdapter.checkBluetoothAddress(targetMac)) {
+                targetMac = "50:8B:B9:50:F6:6D";
+            }
+            // Filtro hardware mirato sul MAC specifico del blaster S06 (aggancio istantaneo)
+            filters.add(new ScanFilter.Builder().setDeviceAddress(targetMac).build());
+            // Filtri sui servizi Tuya noti
             filters.add(new ScanFilter.Builder().setServiceUuid(new ParcelUuid(TUYA_SERVICE_UUID)).build());
-            filters.add(new ScanFilter.Builder().setServiceUuid(new ParcelUuid(TUYA_ALT_SERVICE_UUID)).build());
-            filters.add(new ScanFilter.Builder().setServiceUuid(new ParcelUuid(TUYA_LEGACY_SERVICE_UUID)).build());
+            // Filtro Tuya Manufacturer Data (Company ID 0x07D0)
+            filters.add(new ScanFilter.Builder().setManufacturerData(0x07D0, new byte[0]).build());
 
             ScanSettings settings = new ScanSettings.Builder()
                     .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
@@ -389,6 +386,13 @@ public class TuyaBleManager {
                 if (stateListener != null) {
                     mainHandler.post(() -> stateListener.onDisconnected());
                 }
+                // Riprova automaticamente la scansione dopo 2.5s se disconnesso
+                mainHandler.postDelayed(() -> {
+                    if (!isAuthenticated && !isGattConnected) {
+                        log("Auto-riavvio scansione BLE dopo disconnessione...");
+                        startScanning();
+                    }
+                }, 2500);
             }
         }
 
