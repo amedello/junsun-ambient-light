@@ -52,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        bypassHiddenApiRestrictions();
         super.onCreate(savedInstanceState);
         hideSystemUI();
         setContentView(R.layout.activity_main);
@@ -156,6 +157,20 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         if (bleManager != null) {
             bleManager.disconnect();
+        }
+    }
+
+    private void bypassHiddenApiRestrictions() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+            try {
+                java.lang.reflect.Method forName = Class.class.getDeclaredMethod("forName", String.class);
+                java.lang.reflect.Method getDeclaredMethod = Class.class.getDeclaredMethod("getDeclaredMethod", String.class, Class[].class);
+                Class<?> vmRuntimeClass = (Class<?>) forName.invoke(null, "dalvik.system.VMRuntime");
+                java.lang.reflect.Method getRuntime = (Method) getDeclaredMethod.invoke(vmRuntimeClass, "getRuntime", (Object[]) null);
+                java.lang.reflect.Method setHiddenApiExemptions = (Method) getDeclaredMethod.invoke(vmRuntimeClass, "setHiddenApiExemptions", new Class<?>[]{String[].class});
+                Object vmRuntime = getRuntime.invoke(null);
+                setHiddenApiExemptions.invoke(vmRuntime, new Object[]{new String[]{"L"}});
+            } catch (Throwable ignored) {}
         }
     }
 

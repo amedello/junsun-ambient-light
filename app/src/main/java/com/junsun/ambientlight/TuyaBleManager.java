@@ -345,11 +345,23 @@ public class TuyaBleManager {
         }
     }
 
+    public static boolean refreshDeviceCache(BluetoothGatt gatt) {
+        if (gatt == null) return false;
+        try {
+            java.lang.reflect.Method refreshMethod = gatt.getClass().getMethod("refresh");
+            if (refreshMethod != null) {
+                return (boolean) refreshMethod.invoke(gatt);
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
     @SuppressLint("MissingPermission")
     public void disconnect() {
         mainHandler.removeCallbacks(handshakeRetryRunnable);
         if (bluetoothGatt != null) {
             try {
+                refreshDeviceCache(bluetoothGatt);
                 bluetoothGatt.disconnect();
                 bluetoothGatt.close();
             } catch (Exception ignored) {}
@@ -372,7 +384,8 @@ public class TuyaBleManager {
         @SuppressLint("MissingPermission")
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                log("GATT Connesso. Richiesta MTU 247 per ottimizzare il throughput...");
+                log("GATT Connesso. Pulizia cache e richiesta MTU 247...");
+                refreshDeviceCache(gatt);
                 isGattConnected = true;
                 if (!gatt.requestMtu(247)) {
                     gatt.discoverServices();
